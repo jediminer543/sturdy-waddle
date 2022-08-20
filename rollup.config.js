@@ -14,6 +14,9 @@ if (!dest) {
   throw new Error("Invalid upload destination");
 }
 
+/**
+ * @type {import('rollup').RollupOptions}
+ */
 export default {
   input: "src/main.ts",
   output: {

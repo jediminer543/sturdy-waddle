@@ -1,43 +1,41 @@
 import { ErrorMapper } from "utils/ErrorMapper";
+import { OurMemory } from "advancedMemory";
+import { processRoom } from "roomHandling";
 
-declare global {
-  /*
-    Example types, expand on these or remove them and add your own.
-    Note: Values, properties defined here do no fully *exist* by this type definiton alone.
-          You must also give them an implemention if you would like to use them. (ex. actually setting a `role` property in a Creeps memory)
+export class ScreepsLogic {
+  setup = false;
+  memCleanup = 0;
 
-    Types added in this `global` block are in an ambient, global context. This is needed because `main.ts` is a module file (uses import or export).
-    Interfaces matching on name from @types/screeps will be merged. This is how you can extend the 'built-in' interfaces from @types/screeps.
-  */
-  // Memory extension samples
-  interface Memory {
-    uuid: number;
-    log: any;
-  }
-
-  interface CreepMemory {
-    role: string;
-    room: string;
-    working: boolean;
-  }
-
-  // Syntax for adding proprties to `global` (ex "global.log")
-  namespace NodeJS {
-    interface Global {
-      log: any;
+  loop() {
+    console.log(`Current game tick is ${Game.time}`);
+    if ((this.memCleanup = ((this.memCleanup + 1) % 8)) == 0) {
+      console.log(`Checking memory...`);
+      // Automatically delete memory of missing creeps
+      for (const name in OurMemory.creeps) {
+        if (!(name in Game.creeps)) {
+          delete Memory.creeps[name];
+        }
+      }
     }
+    if (!this.setup) {
+      console.log(`Ensure setup done`);
+      console.log(`SpawnSetup...`);
+      for (const sn in Game.spawns) {
+        const spawn = Game.spawns[sn];
+        // Ensure room is setup
+        processRoom(spawn.room);
+      }
+      this.setup = true;
+    }
+    // Goal aquisition phase
   }
 }
+
+export const logic = new ScreepsLogic();
+
 
 // When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
 // This utility uses source maps to get the line numbers and file names of the original, TS source code
 export const loop = ErrorMapper.wrapLoop(() => {
-  console.log(`Current game tick is ${Game.time}`);
-
-  // Automatically delete memory of missing creeps
-  for (const name in Memory.creeps) {
-    if (!(name in Game.creeps)) {
-      delete Memory.creeps[name];
-    }
-  }
+  logic.loop()
 });
